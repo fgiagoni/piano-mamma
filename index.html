@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Piano Virtuale 2 Ottave</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #2a2f4f, #111322);
+      color: #f5f5f5;
+    }
+
+    .piano-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 24px 28px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(0,0,0,0.45));
+      box-shadow:
+        0 24px 40px rgba(0, 0, 0, 0.65),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(14px);
+    }
+
+    .piano-header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .piano-title {
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .piano-subtitle {
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+
+    .piano {
+      position: relative;
+      width: min(900px, 90vw);
+      aspect-ratio: 7 / 1.1;
+      padding: 12px 10px 16px 10px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #2b2f34, #050608);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.08),
+        inset 0 -4px 10px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+
+    .piano-top-bar {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 14px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
+      opacity: 0.7;
+    }
+
+    .white-keys,
+    .black-keys {
+      position: absolute;
+      inset: 10px 10px 12px 10px;
+    }
+
+    .white-keys {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      justify-content: stretch;
+    }
+
+    .white-key {
+      flex: 1;
+      position: relative;
+      border-radius: 0 0 10px 10px;
+      background: linear-gradient(to bottom, #fdfdfd, #f0f0f0);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.4),
+        inset 0 -2px 0 rgba(0,0,0,0.18);
+      border: 1px solid rgba(0,0,0,0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 6px;
+      transition:
+        transform 0.04s ease-out,
+        box-shadow 0.08s ease-out,
+        filter 0.08s ease-out;
+    }
+
+    .white-key-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.03em;
+      color: #555;
+      opacity: 0.9;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .white-key:hover {
+      filter: brightness(1.04);
+    }
+
+    .white-key.active {
+      transform: translateY(2px);
+      box-shadow:
+        0 1px 1px rgba(0,0,0,0.7),
+        inset 0 -1px 0 rgba(0,0,0,0.35);
+      filter: brightness(0.98);
+    }
+
+    .black-keys {
+      pointer-events: none;
+    }
+
+    .black-key {
+      position: absolute;
+      width: 4.8%;
+      height: 60%;
+      transform: translateX(-50%);
+      border-radius: 0 0 8px 8px;
+      background: linear-gradient(to bottom, #33353a, #050507);
+      box-shadow:
+        0 3px 6px rgba(0,0,0,0.8),
+        inset 0 -2px 4px rgba(0,0,0,0.8);
+      border: 1px solid rgba(0,0,0,0.8);
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 5px;
+      transition:
+        transform 0.04s ease-out,
+        box-shadow 0.08s ease-out,
+        filter 0.08s ease-out;
+      z-index: 10;
+    }
+
+    .black-key-label {
+      font-size: 0.55rem;
+      color: #d2d2d2;
+      opacity: 0.85;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .black-key:hover {
+      filter: brightness(1.06);
+    }
+
+    .black-key.active {
+      transform: translate(-50%, 2px);
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.8),
+        inset 0 -1px 2px rgba(0,0,0,0.8);
+      filter: brightness(0.97);
+    }
+
+    .piano-footer {
+      font-size: 0.75rem;
+      opacity: 0.8;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      max-width: 900px;
+    }
+
+    .led {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #7dff91, #0b3d15);
+      box-shadow: 0 0 6px #7dff91;
+      margin-right: 6px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .keys-hint {
+      opacity: 0.8;
+    }
+
+    @media (max-width: 640px) {
+      .piano-wrapper {
+        padding: 18px 16px;
+        border-radius: 20px;
+      }
+      .piano-title {
+        font-size: 1.1rem;
+      }
+      .piano {
+        aspect-ratio: 7 / 1.3;
+      }
+      .white-key-label,
+      .black-key-label {
+        font-size: 0.55rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="piano-wrapper">
+    <header class="piano-header">
+      <div class="piano-title">Virtual Grand Piano</div>
+      <div class="piano-subtitle">2 ottave · C4 – B5</div>
+    </header>
+
+    <div class="piano" id="piano">
+      <div class="piano-top-bar"></div>
+      <div class="white-keys" id="white-keys"></div>
+      <div class="black-keys" id="black-keys"></div>
+    </div>
+
+    <footer class="piano-footer">
+      <div class="status">
+        <span class="led"></span>
+        <span id="audio-status">Caricamento campione piano...</span>
+      </div>
+      <div class="keys-hint">
+        Controllo da tastiera: <strong>Z X C V B N M , . /</strong> (ottava 4–5) + <strong>Q W E R</strong> (parte dell’ottava 5)
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ---------------------------
+    // CONFIGURAZIONE NOTE
+    // ---------------------------
+
+    const WHITE_NOTE_NAMES = ["C", "D", "E", "F", "G", "A", "B"];
+    const BLACK_NOTE_NAMES = ["C#", "D#", null, "F#", "G#", "A#", null];
+    const OCTAVES = [4, 5]; // 2 ottave: 4 e 5 (C4-B5)
+    const ROOT_NOTE = "C4"; // nota del campione audio
+    const TOTAL_WHITE_KEYS = WHITE_NOTE_NAMES.length * OCTAVES.length; // 14
+
+    const audioStatus = document.getElementById("audio-status");
+
+    // ---------------------------
+    // AUDIO: Web Audio + 1 campione
+    // ---------------------------
+
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const audioContext = new AudioContextClass();
+    let pianoBuffer = null;
+
+    fetch("piano-c4.mp3")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Impossibile caricare piano-c4.mp3");
+        }
+        return response.arrayBuffer();
+      })
+      .then(data => audioContext.decodeAudioData(data))
+      .then(buffer => {
+        pianoBuffer = buffer;
+        audioStatus.textContent = "Pronto · clicca o usa la tastiera per suonare";
+      })
+      .catch(err => {
+        console.error(err);
+        audioStatus.textContent = "Errore nel caricamento del campione (piano-c4.mp3)";
+      });
+
+    function noteToMidi(note) {
+      const match = note.match(/^([A-G])(#?)(\d)$/);
+      if (!match) return null;
+
+      const [, letter, sharp, octaveStr] = match;
+      const octave = parseInt(octaveStr, 10);
+
+      const SEMITONES_FROM_C = {
+        C: 0,
+        D: 2,
+        E: 4,
+        F: 5,
+        G: 7,
+        A: 9,
+        B: 11
+      };
+
+      let semitone = SEMITONES_FROM_C[letter] + (sharp === "#" ? 1 : 0);
+      return (octave + 1) * 12 + semitone;
+    }
+
+    function getPlaybackRate(targetNote) {
+      const rootMidi = noteToMidi(ROOT_NOTE);
+      const targetMidi = noteToMidi(targetNote);
+      if (rootMidi == null || targetMidi == null) return 1;
+      const semitoneDiff = targetMidi - rootMidi;
+      return Math.pow(2, semitoneDiff / 12);
+    }
+
+    async function ensureAudioContextRunning() {
+      if (audioContext.state === "suspended") {
+        try {
+          await audioContext.resume();
+        } catch (e) {
+          console.warn("Impossibile riprendere l'audioContext:", e);
+        }
+      }
+    }
+
+    async function playNote(note) {
+      if (!pianoBuffer) return;
+      await ensureAudioContextRunning();
+
+      const source = audioContext.createBufferSource();
+      source.buffer = pianoBuffer;
+      source.playbackRate.value = getPlaybackRate(note);
+
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = 0.8;
+
+      source.connect(gainNode).connect(audioContext.destination);
+      source.start(0);
+    }
+
+    // ---------------------------
+    // COSTRUZIONE GRAFICA DEL PIANO
+    // ---------------------------
+
+    const whiteKeysContainer = document.getElementById("white-keys");
+    const blackKeysContainer = document.getElementById("black-keys");
+
+    let whiteKeyIndex = 0;
+
+    OCTAVES.forEach(octave => {
+      WHITE_NOTE_NAMES.forEach((noteName, i) => {
+        const noteFullName = noteName + octave;
+
+        const whiteKey = document.createElement("div");
+        whiteKey.className = "white-key";
+        whiteKey.dataset.note = noteFullName;
+
+        const label = document.createElement("div");
+        label.className = "white-key-label";
+        label.textContent = noteFullName;
+        whiteKey.appendChild(label);
+
+        whiteKeysContainer.appendChild(whiteKey);
+
+        whiteKey.addEventListener("mousedown", () => {
+          activateKey(whiteKey);
+          playNote(noteFullName);
+        });
+
+        whiteKey.addEventListener("mouseup", () => {
+          deactivateKey(whiteKey);
+        });
+
+        whiteKey.addEventListener("mouseleave", () => {
+          deactivateKey(whiteKey);
+        });
+
+        const blackName = BLACK_NOTE_NAMES[i];
+        if (blackName) {
+          const blackFullName = blackName + octave;
+          const blackKey = document.createElement("div");
+          blackKey.className = "black-key";
+          blackKey.dataset.note = blackFullName;
+
+          const blackLabel = document.createElement("div");
+          blackLabel.className = "black-key-label";
+          blackLabel.textContent = blackFullName;
+          blackKey.appendChild(blackLabel);
+
+          const centerPosition = (whiteKeyIndex + 0.5) / TOTAL_WHITE_KEYS * 100;
+          blackKey.style.left = centerPosition + "%";
+
+          blackKey.addEventListener("mousedown", () => {
+            activateKey(blackKey);
+            playNote(blackFullName);
+          });
+
+          blackKey.addEventListener("mouseup", () => {
+            deactivateKey(blackKey);
+          });
+
+          blackKey.addEventListener("mouseleave", () => {
+            deactivateKey(blackKey);
+          });
+
+          blackKeysContainer.appendChild(blackKey);
+        }
+
+        whiteKeyIndex++;
+      });
+    });
+
+    function activateKey(keyEl) {
+      keyEl.classList.add("active");
+    }
+
+    function deactivateKey(keyEl) {
+      keyEl.classList.remove("active");
+    }
+
+    // Fallback visivo per click brevi (mobile)
+    document.addEventListener("click", event => {
+      const target = event.target.closest(".white-key, .black-key");
+      if (!target) return;
+      activateKey(target);
+      setTimeout(() => deactivateKey(target), 120);
+    });
+
+    // ---------------------------
+    // CONTROLLO DA TASTIERA
+    // ---------------------------
+
+    // Mappatura tasti fisici → note
+    // (layout QWERTY standard)
+    const KEYBOARD_MAP = {
+      // Ottava 4
+      "z": "C4",
+      "s": "C#4",
+      "x": "D4",
+      "d": "D#4",
+      "c": "E4",
+      "v": "F4",
+      "g": "F#4",
+      "b": "G4",
+      "h": "G#4",
+      "n": "A4",
+      "j": "A#4",
+      "m": "B4",
+
+      // Inizio ottava 5 sui tasti vicini
+      ",": "C5",
+      "l": "C#5",
+      ".": "D5",
+      ";": "D#5",
+      "/": "E5",
+
+      // Parte più alta della seconda ottava sui tasti QWERTY
+      "q": "F5",
+      "2": "F#5",
+      "w": "G5",
+      "3": "G#5",
+      "e": "A5",
+      "4": "A#5",
+      "r": "B5"
+    };
+
+    const pressedKeys = new Set();
+
+    function getKeyElementByNote(note) {
+      return document.querySelector(`.white-key[data-note="${note}"], .black-key[data-note="${note}"]`);
+    }
+
+    window.addEventListener("keydown", event => {
+      const key = event.key.toLowerCase();
+      const note = KEYBOARD_MAP[key];
+
+      if (!note) return;
+      if (event.repeat) return; // niente ripetizione automatica
+
+      pressedKeys.add(key);
+
+      const keyEl = getKeyElementByNote(note);
+      if (keyEl) activateKey(keyEl);
+
+      playNote(note);
+    });
+
+    window.addEventListener("keyup", event => {
+      const key = event.key.toLowerCase();
+      const note = KEYBOARD_MAP[key];
+
+      if (!note) return;
+
+      pressedKeys.delete(key);
+
+      const keyEl = getKeyElementByNote(note);
+      if (keyEl) deactivateKey(keyEl);
+    });
+  </script>
+</body>
+</html>
